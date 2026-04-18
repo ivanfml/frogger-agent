@@ -30,15 +30,15 @@ $$s = (p,\ C,\ L,\ g,\ t,\ v)$$
 
 where: 
 - $p = (x_f, y_f) \in \mathbb{Z}^2$ — frog pixel position, with $x_f \in [2, 401]$ and $y_f \in [39, 475]$
-- $C = \{(x_i^c,\ y_i^c,\ d_i^c,\ k_i)\}$ — for $i=1, 2, \cdots, n_c$ active cars, where $x_i^c$ is x position, $y_i^c \in \{280, 318, 357, 397, 436\}$ is for y position, $d_i^c \in \{\text{left}, \text{right}\}$ is for direction, and $k_i \in \{1, 2\}$ is the speed factor
-- $L = \{(x_j^l,\ y_j^l,\ d_j^l)\}$ — active logs, where $y_j^l \in \{44, 83, 122, 161, 200\}$
-- $g \in \{0,1\}^5$ — which goal slots are filled
-- $t \in \{0, \ldots, 30\}$ — remaining time steps
+- $C = \\{(x_i^c,\ y_i^c,\ d_i^c,\ k_i)\\}$ — for $i=1, 2, \cdots, n_c$ active cars, where $x_i^c$ is x position, $y_i^c \in \\{280, 318, 357, 397, 436\\}$ is for y position, $d_i^c \in \\{\text{left}, \text{right}\\}$ is for direction, and $k_i \in \\{1, 2\\}$ is the speed factor
+- $L = \\{(x_j^l,\ y_j^l,\ d_j^l)\\}$ — active logs, where $y_j^l \in \\{44, 83, 122, 161, 200\\}$
+- $g \in \\{0,1\\}^5$ — which goal slots are filled
+- $t \in \\{0, \ldots, 30\\}$ — remaining time steps
 - $v \in \mathbb{Z}^+$ — current game speed (starts at 3, goes up each level)
  
 **Actions:** At each tick the agent picks one of:
  
-$$A = \{\text{up},\ \text{down},\ \text{left},\ \text{right},\ \text{stay}\}$$
+$$A = \\{\text{up},\ \text{down},\ \text{left},\ \text{right},\ \text{stay}\\}$$
  
 Up/down actions move $y_f$ by ±13px per animation step. Left/right actions move $x_f$ by ±13 or ±14px. The stay action does not change frog position. Movement is blocked at the screen bounds ($x_f \in [2, 401]$ and $y_f \in [39, 475]$).
  
