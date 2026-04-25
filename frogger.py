@@ -401,6 +401,18 @@ def nextLevel(chegaram,enemys,plataforms,frog,game):
 trilha_sound.play(-1)
 text_info = menu_font.render(('Press any button to start!'),1,(0,0,0))
 gameInit = 0
+# print(sprite_plataform.get_width())
+# print(sprite_car1.get_width())
+# print(sprite_car2.get_width())
+# print(sprite_car3.get_width())
+# print(sprite_car4.get_width())
+# print(sprite_car5.get_width())
+# print(sprite_plataform.get_height())
+# print(sprite_car1.get_height())
+# print(sprite_car2.get_height())
+# print(sprite_car3.get_height())
+# print(sprite_car4.get_height())
+# print(sprite_car5.get_height())
 
 while gameInit == 0:
     for event in pygame.event.get():
