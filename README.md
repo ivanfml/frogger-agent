@@ -26,15 +26,19 @@ Run `python frogger.py`
  
 A **state** $s \in S$ is a tuple:
  
-$$s = (p,\ C,\ L,\ g,\ t,\ v)$$
+$$s = (p,\ C,\ L,\ g,\ \text{speed},\ \text{level},\ t,\ \tau,\ T_C,\ T_L)$$
 
 where: 
 - $p = (x_f, y_f) \in \mathbb{Z}^2$ — frog pixel position, with $x_f \in [2, 401]$ and $y_f \in [39, 475]$
-- $C = \\{(x_i^c,\ y_i^c,\ d_i^c,\ k_i)\\}$ — for $i=1, 2, \cdots, n_c$ active cars, where $x_i^c$ is x position, $y_i^c \in \\{280, 318, 357, 397, 436\\}$ is for y position, $d_i^c \in \\{\text{left}, \text{right}\\}$ is for direction, and $k_i \in \\{1, 2\\}$ is the speed factor
-- $L = \\{(x_j^l,\ y_j^l,\ d_j^l)\\}$ — active logs, where $y_j^l \in \\{44, 83, 122, 161, 200\\}$
-- $g \in \\{0,1\\}^5$ — which goal slots are filled
-- $t \in \\{0, \ldots, 30\\}$ — remaining time steps
-- $v \in \mathbb{Z}^+$ — current game speed (starts at 3, goes up each level)
+- $C = \\{(x_i^c,\ y_i^c,\ d_i^c,\ k_i)\\}$ — for $i=1, 2, \cdots, n_c$ active cars, where $x_i^c$ is x position, $y_i^c \in \\{280, 318, 357, 397, 436\\}$ is the lane, $d_i^c \in \\{\text{left}, \text{right}\\}$ is direction, and $k_i \in \\{1, 2\\}$ is the speed factor
+- $L = \\{(x_j^l,\ y_j^l,\ d_j^l)\\}$ — for $j=1,\cdots,n_l$ active logs, where $y_j^l \in \\{44, 83, 122, 161, 200\\}$
+- $g \in \\{0,1,2,3,4,5\\}$ — number of goal slots currently filled
+- $\text{speed} \in \mathbb{Z}^+$ — current game speed (starts at 3, increments each level)
+- $\text{level} \in \mathbb{Z}^+$ — current level number
+- $t \in \\{0, \ldots, 30\\}$ — seconds remaining in the current life
+- $\tau \in \\{0, \ldots, 30\\}$ — tick countdown within the current second (when $\tau$ hits 0, $t$ decrements by 1)
+- $T_C \in \mathbb{R}^5$ — per-lane spawn countdown timers for cars (one per lane)
+- $T_L \in \mathbb{R}^5$ — per-lane spawn countdown timers for logs (one per lane)
  
 **Actions:** At each tick the agent picks one of:
  
@@ -45,12 +49,12 @@ Up/down actions move $y_f$ by ±13px per animation step. Left/right actions move
 **Transitions:** $T(s, a) \to s'$:
  
 Deterministic part (every tick):
-- Each car moves: $x_i^c += v \cdot k_i$ if going right or $x_i^c\ -= v \cdot k_i$ if going left. Cars outside bounds are removed.
-- Each log moves: $x_j^l += v$ if going right or $x_j^l-= v$ if going left. Logs outside bounds are removed.
-- New cars/logs spawn when their countdown timers hit 0.
-- If the frog is in the river zone and on a log, $x_f$ moves by $\pm v$ each tick even without agent action.
+- Each car moves: $x_i^c += \text{speed} \cdot k_i$ if going right or $x_i^c -= \text{speed} \cdot k_i$ if going left. Cars outside bounds are removed.
+- Each log moves: $x_j^l += \text{speed}$ if going right or $x_j^l -= \text{speed}$ if going left. Logs outside bounds are removed.
+- Each timer in $T_C$ and $T_L$ decrements by 1. When a timer hits 0, a new car or log is spawned in that lane and the timer resets to $(\text{base} \cdot \text{speed}) / \text{level}$, where base varies per lane.
+- If the frog is in the river zone and on a log, $x_f$ drifts by $\pm \text{speed}$ each tick regardless of the action taken.
 - The frog's position updates according to $a$.
-- $t' = t - 1$, if $t' = 0$ the frog loses a life and resets.
+- $\tau' = \tau - 1$. When $\tau' = 0$, $t' = t - 1$ and $\tau'$ resets to 30. If $t' = 0$ the frog loses a life and resets.
  
 Stochastic part (1% chance per tick):
 - One car is chosen at random and it moves to a different lane by ±39px in y, bounded to $y \in [280, 436]$. So, 
