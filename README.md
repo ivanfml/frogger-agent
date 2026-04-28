@@ -18,8 +18,8 @@ To verify installation, you can run `python -m pygame.examples.aliens`, if the g
 For more details on pygame installation, you can go to https://www.pygame.org/wiki/MacCompile. For more general details on pygame installion, you can go to https://www.pygame.org/wiki/GettingStarted.
 
 ## Running Frogger
-- Run `python frogger.py` to play regular (user as player) frogger
-- Run `python frogger_agent.py` for the automated agent to play frogger
+- Run `python frogger.py` to play regular (user as player) frogger. (The game code base is from https://github.com/jgubert/frogger and `frogger.py` is the only file that we did not write)
+- Run `python frogger_agent.py` for the automated agent to play frogger (`frogger_agent.py` is just a copy of `frogger.py` but with the agent's decision integration)
 
 ## State Space Specification
 
