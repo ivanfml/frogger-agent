@@ -182,18 +182,22 @@ def _move_obstacles(state):
             log["x"] -= speed
 
 # same purpose as carChangeRoad but better
+# (game author's code just did +-39 but that doesnt align with 
+# our keys in {lane:width} in func _check_car_collision)
+VALID_CAR_LANES = [280, 318, 357, 397, 436]
 def _car_Change_Road(state):
     car = Random.choice(state["cars"])
 
+    # snap current y to nearest valid lane first
+    current_idx = min(range(len(VALID_CAR_LANES)),key = lambda i: abs(VALID_CAR_LANES[i] - car["y"]))
+    
     if Random.randint(1, 2) == 2:
-        shift = 39 
-    else: 
-        shift = -39
+        new_idx = current_idx + 1
+    else:
+        new_idx = current_idx - 1
 
-    new_y = car["y"] + shift
-
-    if 280 <= new_y <= 436:
-        car["y"] = new_y
+    if 0 <= new_idx < len(VALID_CAR_LANES):
+        car["y"] = VALID_CAR_LANES[new_idx]
 
 # same purpose as frogOnTheStreet()
 # Returns true on car collision
@@ -206,15 +210,13 @@ def _check_car_collision(state):
     frog_top    = frog_y
     frog_bottom = frog_y + 30
 
-    # widths from (sprite_car#.get_width())
+    # widths from sprite_car#.get_width(), keyed by lane y-value
     # lane 436 -> car1: 55px, lane 397 -> car2 58px, etc
     car_widths = {436: 55, 397: 58, 357: 80, 318: 68, 280: 56}
     for car in state["cars"]:
-        if car["y"] in car_widths:
-            car_width = car_widths[car["y"]]
-        else:
-            car_width = 58
-            print("CAR Y NOT FOUND\n") # who knows
+        if car["y"] not in car_widths:
+            car["y"] = min(car_widths.keys(), key=lambda lane: abs(lane - car["y"]))
+        car_width = car_widths[car["y"]]
         car_left   = car["x"]
         car_right  = car["x"] + car_width
         car_top    = car["y"]
