@@ -52,7 +52,9 @@ Also, MCTS is an algorithm that was well discussed in class and one that we foun
  
 A **state** $s \in S$ is a tuple:
  
-$$s = (p, C, L, g, f, speed, level, t, \tau, TC_i, TL_i)$$
+$$
+s = (p, C, L, g, f, \text{speed}, \text{level}, t, \tau, T_C, T_L)
+$$
 
 where: 
 - $p = (x_f, y_f) \in \mathbb{Z}^2$ — frog pixel position, with $x_f \in [2, 401]$ and $y_f \in [39, 475]$
