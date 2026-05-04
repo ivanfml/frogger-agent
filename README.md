@@ -52,13 +52,14 @@ Also, MCTS is an algorithm that was well discussed in class and one that we foun
  
 A **state** $s \in S$ is a tuple:
  
-$$s = (p,\ C,\ L,\ g,\ \text{speed},\ \text{level},\ t,\ \tau,\ T_C,\ T_L)$$
+$$s = (p, C, L, g, f, speed, level, t, \tau, TC_i, TL_i)$$
 
 where: 
 - $p = (x_f, y_f) \in \mathbb{Z}^2$ — frog pixel position, with $x_f \in [2, 401]$ and $y_f \in [39, 475]$
 - $C = \\{(x_i^c,\ y_i^c,\ d_i^c,\ k_i)\\}$ — for $i=1, 2, \cdots, n_c$ active cars, where $x_i^c$ is x position, $y_i^c \in \\{280, 318, 357, 397, 436\\}$ is the lane, $d_i^c \in \\{\text{left}, \text{right}\\}$ is direction, and $k_i \in \\{1, 2\\}$ is the speed factor
 - $L = \\{(x_j^l,\ y_j^l,\ d_j^l)\\}$ — for $j=1,\cdots,n_l$ active logs, where $y_j^l \in \\{44, 83, 122, 161, 200\\}$
 - $g \in \\{0,1,2,3,4,5\\}$ — number of goal slots currently filled
+- f ⊆ {0,1,2,3,4} — set of indices of lily pads already filled in the current level
 - $\text{speed} \in \mathbb{Z}^+$ — current game speed (starts at 3, increments each level)
 - $\text{level} \in \mathbb{Z}^+$ — current level number
 - $t \in \\{0, \ldots, 30\\}$ — seconds remaining in the current life
