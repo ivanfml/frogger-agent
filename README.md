@@ -45,7 +45,7 @@ Our inspiration for choosing to create an agent to solve Frogger comes from the 
 
 Frogger is not only a game we enjoy playing, but it is also well known as a classic of the Golden Age of Arcade Games. Due to its popularity, most know at least the rules and the objective of the game. Thus, making the game itself easy to understand and for the average person to notice whether or not the agent works properly.
 
-Also, MCTS is an algorithm that was well discussed in class and one that we found very interesting simply because how it works through its logic in order to get the best possible action. Because of this and becuase we believed it could work as a good and challenging solution to the problem, we gave it much weight on our final decision to pick this project topic.
+Also, MCTS is an algorithm that was well discussed in class and one that we found very interesting simply because how it works through its logic in order to get the best possible action. Because of this and becuase we believed it could work as a good and challenging solution to the problem, we gave it much weight on our final decision to pick this project topic. (More on MCTS in the "Our Solution" section)
 
 ## State Space Specification
 
@@ -88,11 +88,15 @@ Stochastic part (1% chance per tick):
 
 So, the state that the agent transition to depends on whether or not 1% chance hit or not.
  
-**Rewards:**
-- $R = 0$ each tick
-- $R = 10 + t$ when the frog reaches a goal slot (give a bonus if the frog gets to the goal quicker)
-- $R = 100$ when all 5 goals are filled (level complete)
-- $R = - \infty$ or $-100$ on car collision, drowning, or timeout
+## Our Solution
+
+Our algorithmic solution to Frogger is Monte Carlo Tree Search (MCTS). The basics of how it works is that it builds a search tree by sampling future moves. Each node represents a Frogger state and the edges are the actions leading to the next possible states. So, starting from the root node, MCTS explores action sequences and estimates best outcomes. We based our version of MCTS on Mykel Kochenderfer's (Decision Making Under Uncertainty, MIT Press 2015) version. Like Kochenderfer, we used UCB1 as our exploration heuristic, with our exploration constant's value being $1.41 \approx \sqrt{2}$.
+
+We implemented a greedy rollout policy. At each step of the rollout, instead of picking an action at random, we check all possible actions and using the potential function on the resulting state in order to pick whichever action scores highest. If any action would cost the frog a life, we add a penalty of $-2000$ to its score and if any action reaches a goal slot we add a "goal reward" currently set to $5000$. This gives MCTS a better rollout to work with rather than random actions, since taking random actions in Frogger almost always ends in death within a few steps. Thus, our rollout policy helps MTCS build a more appropriate and accurate tree for decision making.
+
+The reward at each step is computed using our potential function. Rather than only giving reward at terminal events (goal reached and death), we define a potential function that scores how good any given state is, and the step reward is the difference in potential between the current and next state plus any terminal reward. This means the agent gets a more informed reward at every step rather than just waiting until something critical happens.
+
+The potential function itself combines several parts in order to get a better agent. The part that we gave most weight is progress toward the goal, which we scored absed on how far up the screen the frog has moved (the more the better). Also, the function penalizes car danger in the road zone by looking at whether any car's predicted future lane is the same as the frog's lane. In the river zone it penalizes being off a log, and when on a log it adds a smaller penalty based on how close the frog is to drifting off the edge. Finally, when the frog is near the goal zone, the function rewards being horizontally aligned with a goal slot that has not been used yet and penalizes being near goal spot that has already been filled previously in the level.
 
 ## Measuring Success
 
