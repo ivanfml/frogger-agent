@@ -21,6 +21,14 @@ For more details on pygame installation, you can go to https://www.pygame.org/wi
 - Run `python frogger.py` to play regular (user as player) frogger. (The game code base is from https://github.com/jgubert/frogger and `frogger.py` is the only file that we did not write)
 - Run `python frogger_agent.py` for the automated agent to play frogger (`frogger_agent.py` is just a copy of `frogger.py` but with the agent's decision integration)
 
+## Motivation
+
+Our inspiration for choosing to create an agent to solve Frogger comes from the game's renown in the gaming industry and the interest in the algorithm we used to solve it, MCTS. 
+
+Frogger is not only a game we enjoy playing, but it is also well known as a classic of the Golden Age of Arcade Games. Due to its popularity, most know at least the rules and the objective of the game. Thus, making the game itself easy to understand and for the average person to notice whether or not the agent works properly.
+
+Also, MCTS is an algorithm that was well discussed in class and one that we found very interesting simply because how it works through its logic in order to get the best possible action. Because of this and becuase we believed it could work as a good and challenging solution to the problem, we gave it much weight on our final decision to pick this project topic.
+
 ## State Space Specification
 
 ### Mathematical description of States, Transitions, Actions and Rewards
