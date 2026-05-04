@@ -17,6 +17,24 @@ To verify installation, you can run `python -m pygame.examples.aliens`, if the g
 
 For more details on pygame installation, you can go to https://www.pygame.org/wiki/MacCompile. For more general details on pygame installion, you can go to https://www.pygame.org/wiki/GettingStarted.
 
+## Problem Statement
+
+For this project, we want to build an agent that can play the Frogger game (using the PyGame version, pyFrogger) on its own. The goal of the agent is to move the frog from the starting position to the goal area while avoiding obstacles like cars and water. At each step, the agent has to decide what move to make (up, down, left, right, or stay), based on what’s currently happening in the game. Since the game progresses over time and the agent keeps making decisions step by step, this fits as a sequential decision-making problem. 
+
+
+## Related Solutions to Similar Problems
+
+https://www.cs.swarthmore.edu/~meeden/cs81/s14/papers/DavisJake.pdf
+This report written by two Swarthmore college students contains the strongest existing solution method to implement an agent to solve Frogger at maximum or close to maximum efficiency that I could find. The students implemented a NEAT-based solution (genetic algorithm called NeuroEvolution of Augmenting Topologies) to solve Frogger. To briefly summarize their solution, they first set out to make their frog able to learn how to avoid colliding with obstacles in traffic, while also staying on logs in the river section of their version of Frogger. To account for this, they equipped their frog with 11 sensors and also one extra sensor dedicated to sensing the position of the frog in the world. 
+
+In addition to those basic details, they tested their Frog with experiments using a fitness function that exponentially rewarded their frog for moving closer to the goal zone.
+
+As for the NEAT algorithm, they used it to evolve the weights of the connections and the topology of the neural networks that controlled their frog. They found that NEAT was able to consistently find optimal solutions in all of their Frogger variations in under 100 generations.
+
+In this case, the Swarthmore report falls under Reinforcement Learning.
+The fitness function that rewards the frog based on its behavior was the strongest indicator to me that this solution method could be generalized under Reinforcement Learning.
+
+
 ## Running Frogger
 - Run `python frogger.py` to play regular (user as player) frogger. (The game code base is from https://github.com/jgubert/frogger and `frogger.py` is the only file that we did not write)
 - Run `python frogger_agent.py` for the automated agent to play frogger (`frogger_agent.py` is just a copy of `frogger.py` but with the agent's decision integration)
