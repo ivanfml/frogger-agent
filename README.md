@@ -93,3 +93,35 @@ So, the state that the agent transition to depends on whether or not 1% chance h
 - $R = 10 + t$ when the frog reaches a goal slot (give a bonus if the frog gets to the goal quicker)
 - $R = 100$ when all 5 goals are filled (level complete)
 - $R = - \infty$ or $-100$ on car collision, drowning, or timeout
+
+## Measuring Success
+
+Measuring success in a Frogger-playing agent wasn't as straightforward as a single accuracy number, because the agent has to consider multiple competing objectives: surviving, making progress, aavoiding obstacles, and ultimately filling all five lily pads at each level. We evaluated the agent along three aspects, each an important aspect of "good play".
+
+### 1. Survival rate
+
+Our first and most basic measure was whether the frog stays alive. We tracked the number of deaths over a fixed window of game decisions and the cause of each death (car collision, drowning, or timeout). An agent that scores quickly but dies often is worse for us than one that plays safely and consistently, because each death erases progress toward completing a level.
+
+### 2. Goal Completion
+
+We also tracked how many distinct lily pads the agent fillled per level. Because Frogger requires hitting all five distinct win slots to advance, an agent that scores the same lily pad five times is failing. One of our major roadblocks was getting our agent to fill empty win slots, instead of repeatedly dying by trying to fill the same one over and over again. Because of the conditions of the game, we treated "Filled all 5 distinct slots" as the real success criterion for a level.
+
+### 3. Decision Efficiency
+
+Even when the agent doesn't die, it can be slow due to dawdling. I counted the number of game decisions between successive goal scores, and watched for dawdling behaviors like oscillating between actions and hesitating at the goal row. When we noticed the agent making 8-10 wasted decisions waiting for a log, we knew theuristic was rewarding comfortable but unproductive states too much, and that caused us to implement specific improvements like the time-urgency penalty and the safe-lane penalty. 
+
+In addition to these quantitative measures, we also relied on strenuous trace inspection. Whenever the agent made an obviously wrong choice, we would print the state, run MCTS once more from that state, and inspect the Q-values and visit counts for each action. This is how we caught several unapparent bugs like the mean Q-backup being poisoned by a single bad rollout, the potential function rewarding "near a goal slot" without distinguishing inside vs. outside the slot range, and the simulator's tick rate being out of sync with the real game.
+
+Concretely, the final agent was meausred against the following success criteria, all of which were met:
+
+*Zero deaths* across six different trials in 120-decision games.
+
+*All 5 distinct lily pads filled* per level, rather than the same slot scored repeatedly.
+
+*No catastrophic failures* (walking blindly into water, getting permanently stuck, staying on a log long after it leaves the state space, etc)
+
+All that being said, the biggest signal that the agent was actually working was watching it play multiple times and seeing the same behavior we wanted to see. Crossing the road decisively, riding a log and hopping to the next one, targeting a lily pad, and then reaching and repeating the process without dying. When the same approach reproduces succcess across different random conditions, for us that was the strongest evidence that both the search and heuristic are doing the right thing rather than getting lucky.
+
+
+
+
