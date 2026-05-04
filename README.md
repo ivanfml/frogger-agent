@@ -17,6 +17,10 @@ To verify installation, you can run `python -m pygame.examples.aliens`, if the g
 
 For more details on pygame installation, you can go to https://www.pygame.org/wiki/MacCompile. For more general details on pygame installion, you can go to https://www.pygame.org/wiki/GettingStarted.
 
+## Running Frogger
+- Run `python frogger.py` to play regular (user as player) frogger. (The game code base is from https://github.com/jgubert/frogger and `frogger.py` is the only file that we did not write)
+- Run `python frogger_agent.py` for the automated agent to play frogger (`frogger_agent.py` is just a copy of `frogger.py` but with the agent's decision integration)
+
 ## Problem Statement
 
 For this project, we want to build an agent that can play the Frogger game (using the PyGame version, pyFrogger) on its own. The goal of the agent is to move the frog from the starting position to the goal area while avoiding obstacles like cars and water. At each step, the agent has to decide what move to make (up, down, left, right, or stay), based on what’s currently happening in the game. Since the game progresses over time and the agent keeps making decisions step by step, this fits as a sequential decision-making problem. 
@@ -33,11 +37,6 @@ As for the NEAT algorithm, they used it to evolve the weights of the connections
 
 In this case, the Swarthmore report falls under Reinforcement Learning.
 The fitness function that rewards the frog based on its behavior was the strongest indicator to me that this solution method could be generalized under Reinforcement Learning.
-
-
-## Running Frogger
-- Run `python frogger.py` to play regular (user as player) frogger. (The game code base is from https://github.com/jgubert/frogger and `frogger.py` is the only file that we did not write)
-- Run `python frogger_agent.py` for the automated agent to play frogger (`frogger_agent.py` is just a copy of `frogger.py` but with the agent's decision integration)
 
 ## Motivation
 
