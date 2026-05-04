@@ -73,7 +73,7 @@ where:
  
 $$A = \\{\text{up},\ \text{down},\ \text{left},\ \text{right},\ \text{stay}\\}$$
  
-Up/down actions move $y_f$ by ±13px per animation step. Left/right actions move $x_f$ by ±13 or ±14px. The stay action does not change frog position. Movement is blocked at the screen bounds ($x_f \in [2, 401]$ and $y_f \in [39, 475]$).
+Up/down actions move $y_f$ by $\pm 39\text{px}$ per agent decision. Left/right actions move $x_f$ by $\pm 41\text{px}$ per agent decision.
  
 **Transitions:** $T(s, a) \to s'$:
  
