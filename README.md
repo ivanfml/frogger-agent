@@ -88,7 +88,7 @@ Deterministic part (every tick):
 Stochastic part (~4% chance per tick):
 - One car is chosen at random and it moves to a different lane by ±39px in y, bounded to $y \in [280, 436]$. 
 
-So, the state that the agent transition to depends on whether or not ~4% chance hit or not.
+So, the state that the agent transitions to depends on whether or not ~4% chance hit or not.
  
 ## Our Solution
 
