@@ -86,7 +86,7 @@ Deterministic part (every tick):
 - $\tau' = \tau - 1$. When $\tau' = 0$, $t' = t - 1$ and $\tau'$ resets to 30. If $t' = 0$ the frog loses a life and resets.
  
 Stochastic part (~4% chance per tick):
-- One car is chosen at random and it moves to a different lane by ±39px in y, bounded to $y \in [280, 436]$. So, 
+- One car is chosen at random and it moves to a different lane by ±39px in y, bounded to $y \in [280, 436]$. 
 
 So, the state that the agent transition to depends on whether or not ~4% chance hit or not.
  
