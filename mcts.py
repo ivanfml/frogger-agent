@@ -24,11 +24,14 @@ FROG_WIDTH = 30
 FROG_HEIGHT = 30
 
 W_PROGRESS = 4.0
+W_CAR_DANGER = 25.0
 
 _FROG_W = 30
 _FROG_H = 30
+_CAR_WIDTHS = {436: 55, 397: 58, 357: 80, 318: 68, 280: 56}
 _START_Y = 475
 _GOAL_Y_THRESHOLD = 40
+_ROAD_TOP = 240
 
 # Evaluate the state to return a reward
 # Could also change the policy used in rollout for a better one (just random rn)
@@ -37,19 +40,51 @@ def _potential(state):
     if state["frog_lives"] <= 0:
         return 0.0
     
+    frog_x = state["frog_x"]
     frog_y = state["frog_y"]
     phi = 0.0
 
     progress = (_START_Y - frog_y) / float(_START_Y - _GOAL_Y_THRESHOLD)
     phi += W_PROGRESS * 100.0 * progress
 
+    if frog_y > _ROAD_TOP:
+        phi -= W_CAR_DANGER * _car_threat(state, frog_x, frog_y, state["speed"])
+
     return phi
 
 def _evaluate(state):
     if state["frog_lives"] <= 0:
         return REWARD_DEATH
+    return _potential(state)
+
+def _car_threat(state, frog_x, frog_y, speed):
+    if not _CAR_WIDTHS:
+        return 0.0
+    lane = min(_CAR_WIDTHS.keys(), key=lambda L: abs(L - frog_y))
+    if abs(lane - frog_y) > 20:
+        return 0.0
     
-    return 0.0
+
+    danger = 0.0
+    frog_left, frog_right = frog_x, frog_x + _FROG_W
+    for car in state["cars"]:
+        if abs(car["y"] - lane) > 20:
+            continue
+        cw = _CAR_WIDTHS.get(car["y"], 60)
+        car_left, car_right = car["x"], car["x"] + cw
+
+        dx = speed * car.get("factor", 1)
+        if car["direction"] == "right":
+            future_left = car_left
+            future_right = car_right + 2 * dx
+        else:
+            future_left = car_left - 2 * dx
+            future_right = car_right
+
+        if future_left < frog_right and future_right > frog_left:
+            gap = min(abs(car_left - frog_right), abs(car_right - frog_left))
+            danger += max(0.2, 1.0 - gap / 150.0)
+    return danger
 
 # Just testing (doesnt really work at all)
 def _reward_from_info(info):
