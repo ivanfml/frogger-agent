@@ -23,11 +23,32 @@ LOG_WIDTH = 99
 FROG_WIDTH = 30
 FROG_HEIGHT = 30
 
+W_PROGRESS = 4.0
+
+_FROG_W = 30
+_FROG_H = 30
+_START_Y = 475
+_GOAL_Y_THRESHOLD = 40
+
 # Evaluate the state to return a reward
 # Could also change the policy used in rollout for a better one (just random rn)
+
+def _potential(state):
+    if state["frog_lives"] <= 0:
+        return 0.0
+    
+    frog_y = state["frog_y"]
+    phi = 0.0
+
+    progress = (_START_Y - frog_y) / float(_START_Y - _GOAL_Y_THRESHOLD)
+    phi += W_PROGRESS * 100.0 * progress
+
+    return phi
+
 def _evaluate(state):
     if state["frog_lives"] <= 0:
         return REWARD_DEATH
+    
     return 0.0
 
 # Just testing (doesnt really work at all)
