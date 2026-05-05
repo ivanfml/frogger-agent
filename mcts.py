@@ -26,7 +26,9 @@ FROG_HEIGHT = 30
 # Evaluate the state to return a reward
 # Could also change the policy used in rollout for a better one (just random rn)
 def _evaluate(state):
-    raise NotImplementedError("TODO: implement _evaluate")
+    if state["frog_lives"] <= 0:
+        return REWARD_DEATH
+    return 0.0
 
 # Just testing (doesnt really work at all)
 def _reward_from_info(info):
