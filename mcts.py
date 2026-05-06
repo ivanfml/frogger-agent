@@ -25,13 +25,17 @@ FROG_HEIGHT = 30
 
 W_PROGRESS = 4.0
 W_CAR_DANGER = 25.0
+W_RIVER_SAFETY = 80.0
+W_LOG_EDGE = 4.0
 
 _FROG_W = 30
 _FROG_H = 30
 _CAR_WIDTHS = {436: 55, 397: 58, 357: 80, 318: 68, 280: 56}
+_LOG_W = 99
 _START_Y = 475
 _GOAL_Y_THRESHOLD = 40
 _ROAD_TOP = 240
+_RIVER_TOP = 40
 
 # Evaluate the state to return a reward
 # Could also change the policy used in rollout for a better one (just random rn)
@@ -50,6 +54,13 @@ def _potential(state):
     if frog_y > _ROAD_TOP:
         phi -= W_CAR_DANGER * _car_threat(state, frog_x, frog_y, state["speed"])
 
+    elif _RIVER_TOP < frog_y < _ROAD_TOP:
+        log = _log_under_frog(state, frog_x, frog_y)
+        if log is None:
+            phi -= W_RIVER_SAFETY
+        else:
+            edge_dist = _log_edge_distance(log, frog_x)
+            phi -= W_LOG_EDGE * max(0.0, (40.0 - edge_dist)) / 40.0
     return phi
 
 def _evaluate(state):
@@ -85,6 +96,30 @@ def _car_threat(state, frog_x, frog_y, speed):
             gap = min(abs(car_left - frog_right), abs(car_right - frog_left))
             danger += max(0.2, 1.0 - gap / 150.0)
     return danger
+
+def _log_under_frog(state, frog_x, frog_y):
+    fl, fr = frog_x, frog_x + _FROG_W
+    ft, fb = frog_y, frog_y + _FROG_H
+    for log in state["logs"]:
+        ll, lr = log["x"], log["x"] + _LOG_W
+        lt, lb = log["y"], log["y"] + _FROG_H
+        if fl < lr and fr > ll and ft < lb and fb > lt:
+            return log
+    return None
+
+def _log_edge_distance(log, frog_x):
+    log_left = log["x"]
+    log_right = log["x"] + _LOG_W
+    frog_left = frog_x
+    frog_right = frog_x + _FROG_W
+
+    left_gap = frog_left - log_left
+    right_gap = log_right - frog_right
+
+    if log["direction"] == "right":
+        return max(0, left_gap)
+    else:
+        return max(0, right_gap)
 
 # Just testing (doesnt really work at all)
 def _reward_from_info(info):
