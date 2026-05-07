@@ -194,33 +194,56 @@ def _log_edge_distance(log, frog_x):
         return max(0, right_gap)
 
 # Just testing (doesnt really work at all)
-def _reward_from_info(info):
+def _reward_from_info(info, prev_lives, new_lives):
+    if new_lives < prev_lives:
+        return REWARD_DEATH
     if info["cause"] == "GOAL":
         return REWARD_GOAL
-    elif info["cause"] in ("CAR COLLISION", "DROWNED", "TIMEOUT"):
-        return REWARD_DEATH
     return REWARD_STEP
 
-def _rollout(state, node, depth):
-    if depth == 0:
-        return 0.0
+def _step_reward(prev_state, next_state, info):
+    r = _reward_from_info(info, prev_state["frog_lives"], next_state["frog_lives"])
+    shaping = _potential(next_state) - _potential(prev_state)
+    return r + shaping
 
+def _is_terminal(state, info):
     if state["frog_lives"] <= 0:
-        return REWARD_DEATH
+        return True
+    if info.get("cause") in ("CAR COLLISION", "DROWNED", "TIMEOUT"):
+        return True
+    return False
 
-    action = Random.choice(ACTIONS)   # pi_0: uniform random
+def _rollout_action(state):
+    best_a = None
+    best_val = -float("inf")
+    for a in ACTIONS:
+        ns, _r, _d, info = generate_Successors(state, a, stoc=False)
+        val = _potential(ns)
+        if ns["frog_lives"] < state["frog_lives"]:
+            val -= 2000.0
+        if info.get("cause") == "GOAL":
+            val += REWARD_GOAL
+        if val > best_val:
+            best_val = val
+            best_a = a
+    return best_a
 
-    next_state, _, done, info = generate_Successors(state, action, stoc=True)
-    # r = _reward_from_info(info)
-    r = _evaluate(next_state)
-
-    if done:
-        return r
-
-    if action not in node.children:
-        node.children[action] = MCTSNode(next_state, parent=node, action_taken=action)
-
-    return r + DISCOUNT * _simulate(next_state, node.children[action], depth - 1, node.n_self)
+def _rollout(state, depth):
+    total = 0.0
+    discount = 1.0
+    cur = state
+    rollout_depth = min(depth, 8)
+    for _ in range(rollout_depth):
+        action = _rollout_action(cur)
+        next_state, _env_r, done, info = generate_Successors(cur, action, stoc=True)
+        r = _step_reward(cur, next_state, info)
+        total += discount * r
+        discount *= DISCOUNT
+        if done or _is_terminal(next_state, info):
+            return total
+        cur = next_state
+    total += discount * _potential(cur)
+    return total
 
 
 def _simulate(state, node, depth, parent_n):
@@ -231,7 +254,9 @@ def _simulate(state, node, depth, parent_n):
         return REWARD_DEATH
 
     if node.n_self == 0:
-        return _rollout(state, node, depth)
+        v = _rollout(state, depth)
+        node.n_self += 1
+        return v
     
     log_parent = math.log(parent_n) if parent_n > 0 else 0.0
 
@@ -243,16 +268,16 @@ def _simulate(state, node, depth, parent_n):
     # a <- argmax UCB
     action = max(ACTIONS, key=ucb)
 
-    next_state, _, done, info = generate_Successors(state, action, stoc=True)
-    # r = _reward_from_info(info)
-    r = _evaluate(next_state)
+    next_state, _env_r, done, info = generate_Successors(state, action, stoc=True)
+   
+    r = _step_reward(state, next_state, info)
 
     if action not in node.children:
         node.children[action] = MCTSNode(next_state, parent=node, action_taken=action)
 
     child = node.children[action]
 
-    if done:
+    if done or _is_terminal(next_state, info):
         q = r
     else:
         q = r + DISCOUNT * _simulate(next_state, child, depth - 1, node.n_self)
