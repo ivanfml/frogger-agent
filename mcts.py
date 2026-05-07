@@ -27,10 +27,14 @@ W_PROGRESS = 4.0
 W_CAR_DANGER = 25.0
 W_RIVER_SAFETY = 80.0
 W_LOG_EDGE = 4.0
+W_GOAL_LANE = 8.0
+W_TIME_URGENCY = 8.0
 
 _FROG_W = 30
 _FROG_H = 30
 _CAR_WIDTHS = {436: 55, 397: 58, 357: 80, 318: 68, 280: 56}
+_GOAL_CENTERS = [43, 125, 207, 289, 371]
+_GOAL_RANGES = [(33, 53), (115, 135), (197, 217), (279, 299), (361, 381)]
 _LOG_W = 99
 _START_Y = 475
 _GOAL_Y_THRESHOLD = 40
@@ -51,6 +55,14 @@ def _potential(state):
     progress = (_START_Y - frog_y) / float(_START_Y - _GOAL_Y_THRESHOLD)
     phi += W_PROGRESS * 100.0 * progress
 
+    time_remaining = state.get("time", 30)
+    phi -= W_TIME_URGENCY * (30 - time_remaining)
+
+    if 241 <= frog_y <= 260:
+        phi -= 50.0
+    if 460 <= frog_y <= 476:
+        phi -= 30.0
+
     if frog_y > _ROAD_TOP:
         phi -= W_CAR_DANGER * _car_threat(state, frog_x, frog_y, state["speed"])
 
@@ -61,6 +73,31 @@ def _potential(state):
         else:
             edge_dist = _log_edge_distance(log, frog_x)
             phi -= W_LOG_EDGE * max(0.0, (40.0 - edge_dist)) / 40.0
+    
+    if frog_y < _RIVER_TOP + 25:
+        filled = state.get("filled_slots", set())
+        open_centers = [cx for i, cx in enumerate(_GOAL_CENTERS) if i not in filled]
+        open_ranges = [_GOAL_RANGES[i] for i in range(5) if i not in filled]
+        filled_ranges = [_GOAL_RANGES[i] for i in range(5) if i in filled]
+        if open_centers:
+            frog_center_x = frog_x + _FROG_W // 2
+            in_open_slot = any(lo < frog_x < hi for (lo, hi) in open_ranges)
+            in_filled_slot = any(lo < frog_x < hi for (lo, hi) in filled_ranges)
+            nearest = min(abs(frog_center_x - cx) for cx in open_centers)
+            if in_open_slot:
+                phi += 400.0
+            elif in_filled_slot:
+                phi -= 200.0
+            phi -= 1.5 * nearest
+    
+    else:
+        filled = state.get("filled_slots", set())
+        open_centers = [cx for i, cx in enumerate(_GOAL_CENTERS) if i not in filled]
+        if open_centers:
+            climb_frac = max(0.0, (_START_Y - frog_y) / float(_START_Y - _GOAL_Y_THRESHOLD))
+            nearest = min(abs(frog_x + _FROG_W // 2 - cx) for cx in open_centers)
+            phi -= climb_frac * 0.3 * nearest
+
     return phi
 
 def _evaluate(state):
@@ -106,6 +143,41 @@ def _log_under_frog(state, frog_x, frog_y):
         if fl < lr and fr > ll and ft < lb and fb > lt:
             return log
     return None
+
+def _log_under_frog_lookahead(state, frog_x, frog_y, speed):
+    fl, fr = frog_x, frog_x + _FROG_W
+    ft, fb = frog_y, frog_y + _FROG_H
+    best = None
+    best_overlap = 0
+    for log in state["logs"]:
+        if log["direction"] == "right":
+            lx = log["x"] + 3 * speed
+        else:
+            lx = log["x"] - 3 * speed
+        ll, lr_ = lx, lx + _LOG_W
+        lt, lb = log["y"], log["y"] + _FROG_H
+        if fl < lr_ and fr > ll and ft < lb and fb > lt:
+            overlap = min(fr, lr_) - max(fl, ll)
+            if overlap > best_overlap:
+                best_overlap = overlap
+                best = dict(log)
+                best["x"] = lx
+    return best
+
+def _log_edge_distance_lookahead(log, frog_x, speed):
+    log_left = log["x"]
+    log_right = log["x"] + _LOG_W
+    frog_left = frog_x
+    frog_right = frog_x + _FROG_W
+
+    left_gap = frog_left - log_left
+    right_gap = log_right - frog_right
+
+    if log["direction"] == "right":
+        return max(0, left_gap)
+    else:
+        return max(0, right_gap)
+
 
 def _log_edge_distance(log, frog_x):
     log_left = log["x"]
