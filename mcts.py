@@ -3,14 +3,14 @@ import random as Random
 from state_space import generate_Successors, ACTIONS
 
 #Could change the values of these to whatever you want
-ITERATIONS = 300
+ITERATIONS = 80
 MAX_DEPTH = 25
-UCB_C = 1.41 # 1.41 = sqrt(2) which is supposed to be the norm
+UCB_C = 5.0
 DISCOUNT = 0.95
 
 # Change this if you want (was just testing things myself)
-REWARD_GOAL =  100.0 # frog reaches a goal slot
-REWARD_DEATH = -500.0 # frog loses a life
+REWARD_GOAL =  5000.0 # frog reaches a goal slot
+REWARD_DEATH = -100.0 # frog loses a life
 REWARD_STEP =    0.0 # neutral tick (no event)
 
 # You can use these if you need them
@@ -245,6 +245,7 @@ def _rollout(state, depth):
     total += discount * _potential(cur)
     return total
 
+MIN_SAMPLES_PER_ACTION = 2
 
 def _simulate(state, node, depth, parent_n):
     if depth == 0:
@@ -260,13 +261,13 @@ def _simulate(state, node, depth, parent_n):
     
     log_parent = math.log(parent_n) if parent_n > 0 else 0.0
 
-    def ucb(a):
-        if node.n_sa[a] == 0:
-            return float("inf")
-        return node.q_sa[a] + UCB_C * math.sqrt(log_parent / node.n_sa[a])
-    
-    # a <- argmax UCB
-    action = max(ACTIONS, key=ucb)
+    under_sampled = [a for a in ACTIONS if node.n_sa[a] < MIN_SAMPLES_PER_ACTION]
+    if under_sampled:
+        action = Random.choice(under_sampled)
+    else:
+        def ucb(a):
+            return node.q_sa[a] + UCB_C * math.sqrt(log_parent / node.n_sa[a])
+        action = max(ACTIONS, key=ucb)
 
     next_state, _env_r, done, info = generate_Successors(state, action, stoc=True)
    

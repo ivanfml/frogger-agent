@@ -70,6 +70,15 @@ def capture_state(frog, enemys, plataforms, chegaram, game, ticks_enemys,
     #ticks_plataforms: list[float] - spawn countdown timers for logs
     #ticks_time      : int - tick countdown within the current second
 
+    filled_slots = set()
+    for arrived in chegaram:
+        ax = arrived.position[0]
+        for i, (xmin, xmax, _cx) in enumerate(GOAL_SLOTS):
+            if xmin <= ax <= xmax:
+                filled_slots.add(i)
+                break
+
+
     return {
        "frog_x":               frog.position[0],
         "frog_y":               frog.position[1],
@@ -89,6 +98,7 @@ def capture_state(frog, enemys, plataforms, chegaram, game, ticks_enemys,
 
 
         "goals_filled": len(chegaram),
+        "filled_slots": filled_slots,
 
         "speed":           game.speed,
         "level":           game.level,
@@ -147,7 +157,7 @@ def _spawn_obstacles(state):
     speed = state["speed"]
     level = state["level"]
  
-    te = state["ticks_enemys"] # list of tick (int) where index is the car
+    te = state["ticks_enemys"] # list of tick where idx is the car
     for i in range(len(te)):
         te[i] -= 1
         if te[i] <= 0:
@@ -181,14 +191,12 @@ def _move_obstacles(state):
         else:
             log["x"] -= speed
 
-# same purpose as carChangeRoad but better
-# (game author's code just did +-39 but that doesnt align with 
-# our keys in {lane:width} in func _check_car_collision)
+# same purpose as carChangeRoad but improved
 VALID_CAR_LANES = [280, 318, 357, 397, 436]
 def _car_Change_Road(state):
     car = Random.choice(state["cars"])
 
-    # snap current y to nearest valid lane first
+    # change current y to nearest valid lane first
     current_idx = min(range(len(VALID_CAR_LANES)),key = lambda i: abs(VALID_CAR_LANES[i] - car["y"]))
     
     if Random.randint(1, 2) == 2:
@@ -210,8 +218,7 @@ def _check_car_collision(state):
     frog_top    = frog_y
     frog_bottom = frog_y + 30
 
-    # widths from sprite_car#.get_width(), keyed by lane y-value
-    # lane 436 -> car1: 55px, lane 397 -> car2 58px, etc
+  
     car_widths = {436: 55, 397: 58, 357: 80, 318: 68, 280: 56}
     for car in state["cars"]:
         if car["y"] not in car_widths:
@@ -235,14 +242,14 @@ def _frog_on_log(state):
     frog_y = state["frog_y"]
     speed  = state["speed"]
  
-    # Frog is 30x30 (from frog.rect())
+    # Frog is 30x30 
     frog_left   = frog_x
     frog_right  = frog_x + 30
     frog_top    = frog_y
     frog_bottom = frog_y + 30
  
     for log in state["logs"]:
-        # Log sprite 99x30  (from sprite_plataform.get_width())
+        # Log sprite 99x30  
         log_left   = log["x"]
         log_right  = log["x"] + 99
         log_top    = log["y"]
@@ -262,26 +269,34 @@ def _frog_on_log(state):
 # same purpose as frogArrived()
 def _check_goal(state):
     frog_x = state["frog_x"]
+    filled = state.get("filled_slots", set())
  
-    for x_min, x_max, _ in GOAL_SLOTS:
+    for i, (x_min, x_max, _) in enumerate(GOAL_SLOTS):
         if x_min < frog_x < x_max:
-            reward = 10 + state["time"]  # COULD MODIFY TO SEE WHICH WORKS BETTER
-            state["goals_filled"] += 1
+            if i in filled:
+                state["frog_y"] = 46
+                return 0
+            reward = 10 + state["time"]  
+            new_filled = set(filled)
+            new_filled.add(i)
+            state["filled_slots"] = new_filled
+            state["goals_filled"] = len(new_filled)
             state["frog_x"] = FROG_INITIAL_POS[0]
             state["frog_y"] = FROG_INITIAL_POS[1]
             state["time"]   = 30
             state["ticks_time"] = 30
  
-            # Level done
+            # level done
             if state["goals_filled"] == 5:
                 state["goals_filled"] = 0
+                state["filled_slots"] = set()
                 state["level"] += 1
                 state["speed"] += 1
-                return reward + 100  # COULD MODIFY TO SEE WHICH WORKS BETTER
+                return reward + 100  
  
             return reward
  
-    # CHECK
+    
     state["frog_y"] = 46
     return 0
 
@@ -297,72 +312,79 @@ def _destroy_obstacles(state):
     ]
 
 
-# stoc states whether or not the stochastic part (possible that car shifts lane) is active 
-# stoc might be useful later idk. If not, then can delete it
-# Returns:
-# next_State: dict
-# reward: float
-# done: bool (true if the frog is out of lives)
-# info: dict (cause: the reason for why the game is over) <- might be useful later idk
+# stoc states whether or not the stochastic part (possible that car shifts lane) is active. stoc might be useful later idk. if not, then can delete it
 def generate_Successors(state, action, stoc=True):
     s = copy.deepcopy(state)
     reward = 0
     done   = False
     info   = {"cause": None}
-    # move frog
 
-    _move_Frog(s,action)
+   
+    # in the real game, mcts_decision is called once every 4 ticks, obstacles move once per tick and collisions are checked at intermediate
+    # frog positions during the hop. We simulate those 4 sub-ticks here.
 
-    # tick time
-    time_over = _update_time(s)
-    if time_over:
-        _frog_dead(s)
-        info["cause"] = "TIMEOUT"
-        if s["frog_lives"] <= 0:
-            done = True
-        return s, reward, done, info
-    
-    # spawn obstacles
-    _spawn_obstacles(s)
+    SUB_TICKS = 4
+    start_x, start_y = s["frog_x"], s["frog_y"]
 
-    # move obstacles
-    _move_obstacles(s)
+    if action == "up":
+        end_x, end_y = start_x, start_y - 39 if start_y > 39 else start_y
+    elif action == "down":
+        end_x, end_y = start_x, start_y + 39 if start_y < 473 else start_y
+    elif action == "left":
+        end_x, end_y = (start_x - 41 if start_x > 2 else start_x), start_y
+    elif action == "right":
+        end_x, end_y = (start_x + 41 if start_x < 401 else start_x), start_y
+    else:  # stay
+        end_x, end_y = start_x, start_y
 
-    # lane change
-    # The successor might have a random car lane switch since the successors are not fully deterministic
-    # (good for mcts)
-    if stoc and s["cars"] and (Random.randint(0, 100) % 100 == 0):
-        _car_Change_Road(s)
+    sub_offsets = [
+        (start_x + (end_x - start_x) * 1 // 3, start_y + (end_y - start_y) * 1 // 3),
+        (start_x + (end_x - start_x) * 2 // 3, start_y + (end_y - start_y) * 2 // 3),
+        (start_x + (end_x - start_x) * 2 // 3, start_y + (end_y - start_y) * 2 // 3),
+        (end_x, end_y),
+    ]
 
-    # area check (collision, drown, goal)
-    frog_y = s["frog_y"]
- 
-    if frog_y > STREET_THRESHOLD:
-        # frog is in the road
-        if _check_car_collision(s):
+    for sub in range(SUB_TICKS):
+        s["frog_x"], s["frog_y"] = sub_offsets[sub]
+
+        time_over = _update_time(s)
+        if time_over:
             _frog_dead(s)
-            info["cause"] = "CAR COLLISION"
+            info["cause"] = "TIMEOUT"
             if s["frog_lives"] <= 0:
                 done = True
             return s, reward, done, info
- 
-    elif RIVER_LOW < frog_y < STREET_THRESHOLD:
-        # frog is in the river
-        safe = _frog_on_log(s)
-        if not safe:
-            _frog_dead(s)
-            info["cause"] = "DROWNED"
-            if s["frog_lives"] <= 0:
-                done = True
-            return s, reward, done, info
- 
-    elif frog_y < GOAL_THRESHOLD:
-        # frog is in goal?
-        reward = _check_goal(s)
-        if reward > 0:
-            info["cause"] = "GOAL"
-    
-    # clean up
-    _destroy_obstacles(s)
+
+        _spawn_obstacles(s)
+        _move_obstacles(s)
+
+        if stoc and s["cars"] and (Random.randint(0, 100) % 100 == 0):
+            _car_Change_Road(s)
+
+        frog_y = s["frog_y"]
+
+        if frog_y > STREET_THRESHOLD:
+            if _check_car_collision(s):
+                _frog_dead(s)
+                info["cause"] = "CAR COLLISION"
+                if s["frog_lives"] <= 0:
+                    done = True
+                return s, reward, done, info
+
+        elif RIVER_LOW < frog_y < STREET_THRESHOLD:
+            safe = _frog_on_log(s)
+            if not safe:
+                _frog_dead(s)
+                info["cause"] = "DROWNED"
+                if s["frog_lives"] <= 0:
+                    done = True
+                return s, reward, done, info
+
+        elif frog_y < GOAL_THRESHOLD:
+            reward = _check_goal(s)
+            if reward > 0:
+                info["cause"] = "GOAL"
+
+        _destroy_obstacles(s)
 
     return s, reward, done, info
